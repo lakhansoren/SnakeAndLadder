@@ -19,7 +19,7 @@ public class Play {
         board.print();
         while(true) {
             System.out.println("Enter a number : ");
-            int move = Integer.parseInt(br.readLine()) % 6 + 1;
+            int move = Integer.parseInt(br.readLine()) % 7;
             board.move(move);
             board.print();
             if(board.isWin()) {

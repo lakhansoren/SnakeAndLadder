@@ -1,6 +1,9 @@
 package board;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
 public class Board {
     Piece[][] board;
@@ -15,72 +18,61 @@ public class Board {
                 board[i][j].c = j;
             }
         }
-        assert l + s < r * c - 1;
-        Set<List<Integer>> set = new HashSet<>();
-        while(l + s >= 0) {
-            if(assignSnake(s)) {
-
-                s--;
-            }
-            if(assignLadder(l)) {
-
-                l--;
-            }
-        }
+//        for(int i = 0 ; i < s ; i++) while(!assignSnake(i));
+//        for(int i = 0 ; i < l ; i++) while(!assignLadder(i));
+        assignSnakeAndLadder(s , l);
     }
-    private boolean assignLadder(int l) {
-        boolean found = false;
+
+    private void assignSnakeAndLadder(int s, int l) {
+        System.out.println(s);
+        System.out.println(l);
+        List<Piece> pieces = new ArrayList<>();
         for(int i = 0 ; i < board.length ; i++) {
             for(int j = 0 ; j < board[0].length ; j++) {
                 if(i == 0 && j == 0) continue;
                 if(i == board.length - 1 && j == board[0].length - 1) continue;
-                if(isPieceEligible(board[i][j]) && !found) {
-                    for(int ii = i + 1 ; ii < board.length ; ii++) {
-                        for(int jj = j + 1 ; jj < board[0].length ; jj++) {
-                            if(isPieceEligible(board[ii][jj])) {
-                                found = true;
-                                board[i][j].endingPiece = board[ii][jj];
-                                board[ii][jj].backPointer = board[i][j];
-                                board[i][j].label = board[ii][jj].label = "L" + l;
-                                break;
-                            }
-                        }
-                    }
-                }
+                pieces.add(board[i][j]);
             }
         }
-        return found;
+        Collections.shuffle(pieces);
+        for(int i = 0 ; i < pieces.size() ; i += 4) {
+            if(i + 3 >= pieces.size()) break;
+            if(s > 0) {
+                assignSnake(pieces.get(i) , pieces.get(i + 1), s);
+                s--;
+            }
+            if(l > 0) {
+                assignLadder(pieces.get(i + 2), pieces.get(i + 3), l);
+                l--;
+            }
+        }
+    }
+
+    private void assignLadder(Piece a, Piece b, int l) {
+        if(a.r > b.r) {
+            a.endingPiece = b;
+        } else {
+            b.endingPiece = a;
+        }
+        b.label = a.label = "L" + l;
+    }
+
+    private void assignSnake(Piece a, Piece b, int s) {
+        if(b.r > a.r) {
+            b.endingPiece = a;
+        } else {
+            a.endingPiece = b;
+        }
+        a.label = b.label = "S" + s;
     }
 
     private boolean isPieceEligible(Piece piece) {
         if(piece.r == 0 && piece.c == 0) return false;
         if(piece.r == board.length - 1 && piece.c == board[0].length - 1) return false;
-        if(new Random().nextInt(100) > 70) return false;
+        if(new Random().nextInt(100) < 96) return false;
         if(piece.endingPiece != null) return false;
         if(piece.backPointer != null) return false;
         return true;
-    }
-
-    private boolean assignSnake(int s) {
-        boolean found = false;
-        for(int i = board.length - 1 ; i >= 0 ; i--) {
-            for(int j = board[0].length - 1 ; j >= 0 ; j--) {
-                if(isPieceEligible(board[i][j]) && !found) {
-                    for(int ii = i - 1 ; ii >= 0 ; ii--) {
-                        for(int jj = j - 1 ; jj >= 0 ; jj--) {
-                            if(isPieceEligible(board[ii][jj])) {
-                                found = true;
-                                board[i][j].endingPiece = board[ii][jj];
-                                board[ii][jj].backPointer = board[i][j];
-                                board[i][j].label = board[ii][jj].label = "S" + s;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return found;
     }
 
     public void move(int move) {
@@ -88,22 +80,24 @@ public class Board {
         int dupC = currentC;
         boolean possible = true;
         for(int i = 0; i < move ; i++) {
-            for(dupC = currentC + 1 ; dupC <= board[0].length ; dupC++) {
-                if(dupC == board[0].length) {
-                    if(dupR >= board.length) {
-                        possible = false;
-                        break;
-                    }
-                    dupC = -1;
-                    dupR++;
-                }
-            }
+           dupC++;
+           if(dupC == board[0].length) {
+               dupC = 0;
+               dupR++;
+               if(dupR == board.length) {
+                   possible = false;
+                   break;
+               }
+           }
         }
         if(possible) {
             Piece endingPiece = board[dupR][dupC].endingPiece;
             if(endingPiece != null) {
                 currentR = endingPiece.r;
                 currentC = endingPiece.c;
+            } else {
+                currentR = dupR;
+                currentC = dupC;
             }
         }
 
